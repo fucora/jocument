@@ -1,14 +1,18 @@
 package com.docutools.jocument;
 
 import com.docutools.jocument.impl.JsonResolver;
+import com.docutools.jocument.impl.PostProcessorImpl;
 import com.docutools.jocument.impl.ReflectionResolver;
+import com.docutools.jocument.placeholders.RemoteImagePlaceholderResolverFactory;
 import com.docutools.jocument.sample.model.SampleModelData;
 import org.apache.poi.util.LocaleUtil;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -170,6 +174,28 @@ public class WordDocuments {
 
     // Act
     Document document = template.startGeneration(resolver);
+    document.blockUntilCompletion(60000L); // 1 minute
+
+    // Assert
+    assertThat(document.completed(), is(true));
+
+    Desktop.getDesktop().open(document.getPath().toFile());
+  }
+
+  @Test
+  @DisplayName("Generate a document containing a remote image placeholder")
+  void shouldGenerateDocumentWithRemoteImage() throws InterruptedException, IOException {
+    // Arrange
+    Template template = Template.fromClassPath("/templates/word/RemoteImageTemplate.docx")
+            .orElseThrow();
+    PlaceholderResolver resolver = new ReflectionResolver(SampleModelData.PICARD_PERSON);
+    PostProcessor<XWPFDocument> postProcessor = new PostProcessorImpl<>();
+    postProcessor.addPostProcessingResolver(RemoteImagePlaceholderResolverFactory.createRemoteImagePlaceholderResolver(
+            XWPFDocument.class,
+            Collections.singletonList("https://www.blackdogadvertising.com/wp-content/uploads/")));
+
+    // Act
+    Document document = template.startGeneration(resolver, postProcessor);
     document.blockUntilCompletion(60000L); // 1 minute
 
     // Assert
