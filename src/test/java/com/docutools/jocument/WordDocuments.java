@@ -1,7 +1,9 @@
 package com.docutools.jocument;
 
+import com.docutools.jocument.impl.CustomPlaceholderRegistryImpl;
 import com.docutools.jocument.impl.JsonResolver;
 import com.docutools.jocument.impl.ReflectionResolver;
+import com.docutools.jocument.impl.word.placeholders.TableOfContentsPlaceholderData;
 import com.docutools.jocument.sample.model.SampleModelData;
 import org.apache.poi.util.LocaleUtil;
 import org.junit.jupiter.api.DisplayName;
@@ -166,7 +168,9 @@ public class WordDocuments {
     // Arrange
     Template template = Template.fromClassPath("/templates/word/TOCTemplate.docx")
             .orElseThrow();
-    PlaceholderResolver resolver = new ReflectionResolver(SampleModelData.PICARD_PERSON);
+    var customPlaceholderRegistry = new CustomPlaceholderRegistryImpl();
+    customPlaceholderRegistry.addHandler("tableOfContents", TableOfContentsPlaceholderData.class);
+    PlaceholderResolver resolver = new ReflectionResolver(SampleModelData.PICARD_PERSON, customPlaceholderRegistry);
 
     // Act
     Document document = template.startGeneration(resolver);
